@@ -1,0 +1,2 @@
+#define szachista_VERSION_MAJOR @szachista_VERSION_MAJOR@
+#define szachista_VERSION_MINOR @szachista_VERSION_MINOR@

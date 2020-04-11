@@ -2,6 +2,35 @@
 #include "ruch.hpp"
 #include "optymalny_ruch.hpp"
 
+#include "szachistaConfig.h"
+
+#include "termios.h"
+
+static struct termios str_termios, trz_termios;
+
+void nioset(int echo)
+{
+
+  tcgetattr(0, &str_termios);
+  trz_termios = str_termios;
+  trz_termios.c_lflag &= ~ICANON;
+
+  if(echo)
+    trz_termios.c_lflag |= ECHO;
+  else
+    trz_termios.c_lflag &= ~ECHO;
+
+  tcsetattr(0, TCSANOW, &trz_termios);
+
+}
+
+void sioset(void)
+{
+
+  tcsetattr(0, TCSANOW, &str_termios);
+
+}
+
 bool czyszachowane(pair<int, int> prepole, pair<int, int> pole, typ t, szachownica sz, pair<int, int> *l2m, do_roszady *drszd)
 {
 
@@ -483,13 +512,15 @@ int main(void)
 
   system("clear");
 
-  cout << "czas na ruch komputera ( czas zalecany to 15 )\n\n";
+  cout << "szachista " << szachista_VERSION_MAJOR << "." << szachista_VERSION_MINOR << "\n\n";
+
+  cout << "czas na ruch komputera ( czas zalecany to 15 )\n";
   cout << "> ";
   getline(cin, input);
-  czas_na_ruch = stod(input);
+  czas_na_ruch = stod(input); //może się wywalić
 
-  system("clear");
-  cout << "b/c?\n\n";
+  //system("clear");
+  cout << "\n\nbiałe (b) / czarne (c)?\n";
 
   while( ( input != "b" ) && ( input != "c" ) )
   {
@@ -501,6 +532,12 @@ int main(void)
 
   if( input == "c" )
     color=true;
+
+  cout << "\nnaciśnij dowolny klawisz w celu rozpoczęcia gry... " << flush;
+
+  nioset(0);
+  char zzzzzzzzzzzzzzzzzzzzzzzzz = getchar();
+  sioset();
 
   ruch({-1, -1}, &main_status, &main_status2, gra, &main_l2m, &main_do_roszady );
 
