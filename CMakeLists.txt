@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # nazwa projektu
-project(szachista VERSION 2.1)
+project(szachista VERSION 2.2)
 
 # standard C++
 set(CMAKE_CXX_STANDARD 17)
