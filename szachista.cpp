@@ -2,6 +2,36 @@
 #include "ruch.hpp"
 #include "optymalny_ruch.hpp"
 
+#include "termios.h"
+#include <sys/ioctl.h>
+
+#include "szachistaConfig.h"
+
+static struct termios str_termios, trz_termios;
+
+void nioset(int echo)
+{
+
+  tcgetattr(0, &str_termios);
+  trz_termios = str_termios;
+  trz_termios.c_lflag &= ~ICANON;
+
+  if(echo)
+    trz_termios.c_lflag |= ECHO;
+  else
+    trz_termios.c_lflag &= ~ECHO;
+
+  tcsetattr(0, TCSANOW, &trz_termios);
+
+}
+
+void sioset(void)
+{
+
+  tcsetattr(0, TCSANOW, &str_termios);
+
+}
+
 bool czyszachowane(pair<int, int> prepole, pair<int, int> pole, typ t, szachownica sz, pair<int, int> *l2m, do_roszady *drszd)
 {
 
@@ -318,6 +348,38 @@ bool valid( pair< pair<int, int>, pair<int, int> > terazruch, bool color )
 void rysuj(bool color)
 {
 
+  struct winsize terminal_size_cr;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &terminal_size_cr);
+
+  int rows = terminal_size_cr.ws_row;
+  int columns = terminal_size_cr.ws_col;
+
+  cout << "\033[47;30m ruch: ";
+
+  string rch_num = to_string( ( lst_n_ruchy.size() ) / 2 + 1 );
+
+  cout << rch_num << " gracz: ";
+
+  if( lst_n_ruchy.size() % 2 )
+    cout << "czarny";
+  else
+    cout << "biały ";
+
+  for(int i=0;i<columns - 21 - rch_num.size();i++)
+    cout << " ";
+
+  cout << "\033[0m\n┌";
+
+  for(int i=0;i<44;i++)
+    cout << "─";
+
+  cout << "┬";
+
+  for(int i=0;i<columns - 47;i++)
+    cout << "─";
+
+  cout << "┐\n│";
+
   if( color )
   {
 
@@ -330,12 +392,46 @@ void rysuj(bool color)
 
     }
 
-    cout << '\n';
+    cout << "  │";
+
+    for(int i=0;i<columns - 47;i++)
+    {
+
+      if( i / 45 < lst_n_ruchy.size() )
+      {
+
+        if( i % 5 == 4 )
+        {
+
+          if( "HGFEDCBA\0"[ ( i % 45 ) / 5 ] )
+            cout << "HGFEDCBA"[ ( i % 45 ) / 5 ];
+          else
+            cout << "│";
+
+        }
+        else
+        {
+
+          cout << " ";
+
+        }
+
+      }
+      else
+      {
+
+        cout << " ";
+
+      }
+
+    }
+
+    cout << "│\n";
 
     for(int i=0;i<8;i++)
     {
 
-      cout << "\33[0m" << i+1 << ' ';
+      cout << "\33[0m│" << i+1 << ' ';
 
       for(int j=0;j<8;j++)
       {
@@ -356,7 +452,81 @@ void rysuj(bool color)
 
       }
 
-      cout << "\33[0m " << i+1 <<  "\n  ";
+      cout << "\33[0m " << i+1 << "│";
+
+      // for(int i=0;i<columns - 47;i++)
+      //   cout << " ";
+
+      for(int j=0;j<columns - 47;j++)
+      {
+
+        if( j / 45 < lst_n_ruchy.size() )
+        {
+
+          if( ( j % 45 ) < 2 )
+          {
+
+            cout << ' ';
+            continue;
+
+          }
+
+          if( ( j % 45 ) > 41 )
+          {
+
+            if( ( j % 45 ) == 44 )
+              cout << i+1;
+            else
+              cout << ' ';
+
+            continue;
+
+          }
+
+          if( ( ( j % 45 ) - 2 ) % 10 < 5 )
+          {
+
+            if( i % 2 )
+              cout << "\33[1;48;5;238m";
+            else
+              cout << "\33[1;48;5;248m";
+
+          }
+          else
+          {
+
+            if( i % 2 )
+              cout << "\33[1;48;5;248m";
+            else
+              cout << "\33[1;48;5;238m";
+
+          }
+
+          if( lst_n_ruchy[ lst_n_ruchy.size() - 1 - j/45 ][i][ ( ( j % 45 ) - 2 ) / 5 ].second == b )
+            cout << "\33[38;5;15m";
+          else
+            cout << "\33[38;5;0m";
+
+          if( ( ( j % 45 ) - 2 ) % 5 == 2 )
+            cout << lifig(lst_n_ruchy[ lst_n_ruchy.size() - 1 - j/45 ][i][ ( ( j % 45 ) - 2 ) / 5 ].first);
+          else
+            cout << ' ';
+
+          //cerr << lst_n_ruchy.size();
+
+          cout << "\33[0m";
+
+        }
+        else
+        {
+
+          cout << " ";
+
+        }
+
+      }
+
+      cout <<  "│\n│  ";
 
       for(int j=0;j<8;j++)
       {
@@ -377,18 +547,106 @@ void rysuj(bool color)
 
       }
 
-      cout << '\n';
+      cout << "\33[0m  │";
+
+      // for(int i=0;i<columns - 47;i++)
+      //   cout << " ";
+
+      for(int j=0;j<columns - 47;j++)
+      {
+
+        if( j / 45 < lst_n_ruchy.size() )
+        {
+
+          if( ( j % 45 ) < 2 )
+          {
+
+            cout << ' ';
+            continue;
+
+          }
+
+          if( ( j % 45 ) > 41 )
+          {
+
+            cout << ' ';
+            continue;
+
+          }
+
+          if( ( ( j % 45 ) - 2 ) % 10 < 5 )
+          {
+
+            if( i % 2 )
+              cout << "\33[1;48;5;238m \33[0m";
+            else
+              cout << "\33[1;48;5;248m \33[0m";
+
+            continue;
+
+          }
+
+          if( i % 2 )
+            cout << "\33[1;48;5;248m \33[0m";
+          else
+            cout << "\33[1;48;5;238m \33[0m";
+
+        }
+        else
+        {
+
+          cout << " ";
+
+        }
+
+      }
+
+      cout << "│\n";
 
     }
 
     cout << "\33[0m";
 
-    cout << "  ";
+    cout << "│  ";
 
     for(char i='H';i>='A';i--)
     {
 
       cout << "  " << i << "  ";
+
+    }
+
+    cout << "  │";
+
+    for(int i=0;i<columns - 47;i++)
+    {
+
+      if( i / 45 < lst_n_ruchy.size() )
+      {
+
+        if( i % 5 == 4 )
+        {
+
+          if( "HGFEDCBA\0"[ ( i % 45 ) / 5 ] )
+            cout << "HGFEDCBA"[ ( i % 45 ) / 5 ];
+          else
+            cout << "│";
+
+        }
+        else
+        {
+
+          cout << " ";
+
+        }
+
+      }
+      else
+      {
+
+        cout << " ";
+
+      }
 
     }
 
@@ -405,12 +663,46 @@ void rysuj(bool color)
 
     }
 
-    cout << '\n';
+    cout << "  │";
+
+    for(int i=0;i<columns - 47;i++)
+    {
+
+      if( i / 45 < lst_n_ruchy.size() )
+      {
+
+        if( i % 5 == 4 )
+        {
+
+          if( "ABCDEFGH\0"[ ( i % 45 ) / 5 ] )
+            cout << "ABCDEFGH"[ ( i % 45 ) / 5 ];
+          else
+            cout << "│";
+
+        }
+        else
+        {
+
+          cout << " ";
+
+        }
+
+      }
+      else
+      {
+
+        cout << " ";
+
+      }
+
+    }
+
+    cout << "│\n";
 
     for(int i=7;i>=0;i--)
     {
 
-      cout << "\33[0m" << i+1 << ' ';
+      cout << "\33[0m│" << i+1 << ' ';
 
       for(int j=7;j>=0;j--)
       {
@@ -431,7 +723,81 @@ void rysuj(bool color)
 
       }
 
-      cout << "\33[0m " << i+1 <<  "\n  ";
+      cout << "\33[0m " << i+1 << "│";
+
+      // for(int i=0;i<columns - 47;i++)
+      //   cout << " ";
+
+      for(int j=0;j<columns - 47;j++)
+      {
+
+        if( j / 45 < lst_n_ruchy.size() )
+        {
+
+          if( ( j % 45 ) < 2 )
+          {
+
+            cout << ' ';
+            continue;
+
+          }
+
+          if( ( j % 45 ) > 41 )
+          {
+
+            if( ( j % 45 ) == 44 )
+              cout << i+1;
+            else
+              cout << ' ';
+
+            continue;
+
+          }
+
+          if( ( ( j % 45 ) - 2 ) % 10 < 5 )
+          {
+
+            if( i % 2 )
+              cout << "\33[1;48;5;248m";
+            else
+              cout << "\33[1;48;5;238m";
+
+          }
+          else
+          {
+
+            if( i % 2 )
+              cout << "\33[1;48;5;238m";
+            else
+              cout << "\33[1;48;5;248m";
+
+          }
+
+          if( lst_n_ruchy[ lst_n_ruchy.size() - 1 - j/45 ][i][ 7 - ( ( j % 45 ) - 2 ) / 5 ].second == b )
+            cout << "\33[38;5;15m";
+          else
+            cout << "\33[38;5;0m";
+
+          if( ( ( j % 45 ) - 2 ) % 5 == 2 )
+            cout << lifig(lst_n_ruchy[ lst_n_ruchy.size() - 1 - j/45 ][i][ 7 - ( ( j % 45 ) - 2 ) / 5 ].first);
+          else
+            cout << ' ';
+
+          //cerr << lst_n_ruchy.size();
+
+          cout << "\33[0m";
+
+        }
+        else
+        {
+
+          cout << " ";
+
+        }
+
+      }
+
+      cout <<  "│\n│  ";
 
       for(int j=0;j<8;j++)
       {
@@ -452,13 +818,67 @@ void rysuj(bool color)
 
       }
 
-      cout << '\n';
+      cout << "\33[0m  │";
+
+      // for(int j=0;j<columns - 47;j++)
+      //   cout << " ";
+
+      for(int j=0;j<columns - 47;j++)
+      {
+
+        if( j / 45 < lst_n_ruchy.size() )
+        {
+
+          if( ( j % 45 ) < 2 )
+          {
+
+            cout << ' ';
+            continue;
+
+          }
+
+          if( ( j % 45 ) > 41 )
+          {
+
+            cout << ' ';
+            continue;
+
+          }
+
+          if( ( ( j % 45 ) - 2 ) % 10 < 5 )
+          {
+
+            if( i % 2 )
+              cout << "\33[1;48;5;248m \33[0m";
+            else
+              cout << "\33[1;48;5;238m \33[0m";
+
+            continue;
+
+          }
+
+          if( i % 2 )
+            cout << "\33[1;48;5;238m \33[0m";
+          else
+            cout << "\33[1;48;5;248m \33[0m";
+
+        }
+        else
+        {
+
+          cout << " ";
+
+        }
+
+      }
+
+      cout << "│\n";
 
     }
 
     cout << "\33[0m";
 
-    cout << "  ";
+    cout << "│  ";
 
     for(char i='A';i<'I';i++)
     {
@@ -467,9 +887,82 @@ void rysuj(bool color)
 
     }
 
+    cout << "  │";
+
+    for(int i=0;i<columns - 47;i++)
+    {
+
+      if( i / 45 < lst_n_ruchy.size() )
+      {
+
+        if( i % 5 == 4 )
+        {
+
+          if( "ABCDEFGH\0"[ ( i % 45 ) / 5 ] )
+            cout << "ABCDEFGH"[ ( i % 45 ) / 5 ];
+          else
+            cout << "│";
+
+        }
+        else
+        {
+
+          cout << " ";
+
+        }
+
+      }
+      else
+      {
+
+        cout << " ";
+
+      }
+
+    }
+
   }
 
-  cout << "\33[0m";
+  cout << "│\n└";
+
+  for(int i=0;i<44;i++)
+    cout << "─";
+
+  cout << "┴";
+
+  for(int i=0;i<columns - 47;i++)
+    cout << "─";
+
+  cout << "┘";
+
+  cout << "\33[0m" << flush;
+
+}
+
+bool val_fpnum(string str)
+{
+
+  bool bk = 0;
+
+  for(int i=0;i<str.size();i++)
+  {
+
+    if( str[i] >= '0' && str[i] <= '9' )
+      continue;
+
+    if( str[i] == '.' && !bk )
+    {
+
+      bk = 1;
+      continue;
+
+    }
+
+    return false;
+
+  }
+
+  return true;
 
 }
 
@@ -479,17 +972,26 @@ int main(void)
   srand(std::chrono::high_resolution_clock().now().time_since_epoch().count());
   ios_base::sync_with_stdio(0);
 
-  string input;
+  string input = "..";
 
   system("clear");
 
-  cout << "czas na ruch komputera ( czas zalecany to 15 )\n\n";
-  cout << "> ";
-  getline(cin, input);
+  cout << "szachista " << szachista_VERSION_MAJOR << "." << szachista_VERSION_MINOR << "\n\n";
+
+  cout << "czas na ruch komputera ( czas zalecany to 15 )\n";
+
+  while( !val_fpnum(input) )
+  {
+
+    cout << "> ";
+    getline(cin, input);
+
+  }
+
   czas_na_ruch = stod(input);
 
-  system("clear");
-  cout << "b/c?\n\n";
+  //system("clear");
+  cout << "\nbiałe (b) / czarne (c)?\n";
 
   while( ( input != "b" ) && ( input != "c" ) )
   {
@@ -502,6 +1004,12 @@ int main(void)
   if( input == "c" )
     color=true;
 
+  cout << "\nnaciśnij dowolny klawisz w celu rozpoczęcia gry... " << flush;
+
+  nioset(0);
+  char zzzzzzzzzzzzzzzzzzzzzzzzz = getchar();
+  sioset();
+
   ruch({-1, -1}, &main_status, &main_status2, gra, &main_l2m, &main_do_roszady );
 
   if(color)
@@ -513,6 +1021,8 @@ int main(void)
     // cout << "\nmyślę..." << endl;
     //
     // apply( ruszaj(gra, &main_l2m, &main_do_roszady, b), gra, &main_l2m, &main_do_roszady );
+
+    lst_n_ruchy.push_back( gra );
 
     if( rand() % 2 )
       apply( { {1, 3}, {3, 3} }, gra, &main_l2m, &main_do_roszady );
@@ -543,6 +1053,8 @@ int main(void)
       cout << "zły ruch!\n";
 
     }
+
+    lst_n_ruchy.push_back( gra );
 
     apply( { { input[1]-'1', 7-(input[0]-'a') }, { input[3]-'1', 7-(input[2]-'a') } }, gra, &main_l2m, &main_do_roszady );
 
@@ -603,6 +1115,8 @@ int main(void)
     rysuj(color);
 
     cout << "\nmyślę..." << endl;
+
+    lst_n_ruchy.push_back( gra );
 
     if(color)
       apply( ruszaj(gra, &main_l2m, &main_do_roszady, b), gra, &main_l2m, &main_do_roszady );
