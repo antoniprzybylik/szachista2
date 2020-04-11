@@ -486,7 +486,7 @@ int main(void)
   cout << "czas na ruch komputera ( czas zalecany to 15 )\n\n";
   cout << "> ";
   getline(cin, input);
-  czas_na_ruch = stod(input);
+  czas_na_ruch = stod(input);  // może się wywalić
 
   system("clear");
   cout << "b/c?\n\n";
