@@ -354,19 +354,20 @@ void rysuj(bool color)
   int rows = terminal_size_cr.ws_row;
   int columns = terminal_size_cr.ws_col;
 
-  cout << "\033[47;30m ruch: ";
-
+  int sm_vlen = to_string(szachista_VERSION_MAJOR).size() + to_string( szachista_VERSION_MINOR ).size();
   string rch_num = to_string( ( lst_n_ruchy.size() ) / 2 + 1 );
 
-  cout << rch_num << " gracz: ";
+  cout << "\033[47;30m szachista " << szachista_VERSION_MAJOR << "." << szachista_VERSION_MINOR;
+
+  for(int i=0;i<columns - 33 - rch_num.size() - sm_vlen;i++)
+    cout << " ";
+
+  cout << "ruch: " << rch_num << " gracz: ";
 
   if( lst_n_ruchy.size() % 2 )
-    cout << "czarny";
+    cout << "czarny ";
   else
-    cout << "biały ";
-
-  for(int i=0;i<columns - 21 - rch_num.size();i++)
-    cout << " ";
+    cout << "biały  ";
 
   cout << "\033[0m\n┌";
 
